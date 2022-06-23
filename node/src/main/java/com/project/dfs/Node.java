@@ -182,7 +182,7 @@ public class Node {
         };
 
         // Create the directory
-        File theDir = new File("/fs/" + String.valueOf(nodePort));
+        File theDir = new File("/home/chiran/Documents/Projects/files/" + String.valueOf(nodePort));
         if (!theDir.exists()) {
             theDir.mkdirs();
         }
@@ -198,10 +198,10 @@ public class Node {
                 subFileList[i] = fileList[randIndex];
                 System.out.println("\t\t" + subFileList[i]);
 
-                File file = new File("/fs/" + String.valueOf(nodePort) + "/" + subFileList[i] + ".txt");
+                File file = new File("/home/chiran/Documents/Projects/files/" + String.valueOf(nodePort) + "/" + subFileList[i] + ".txt");
                 file.createNewFile();
 
-                FileWriter myWriter = new FileWriter("/fs/" + String.valueOf(nodePort) + "/" + subFileList[i] + ".txt");
+                FileWriter myWriter = new FileWriter("/home/chiran/Documents/Projects/files/" + String.valueOf(nodePort) + "/" + subFileList[i] + ".txt");
                 int randContent = random.nextInt(100000000);
                 myWriter.write(String.valueOf(randContent));
                 myWriter.close();

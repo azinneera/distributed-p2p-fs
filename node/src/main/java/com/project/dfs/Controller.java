@@ -26,7 +26,7 @@ public class Controller {
     @GetMapping("/downloadFile")
     public ResponseEntity<byte[]> downloadFile(@RequestParam(name = "fileName") String fileName) throws IOException, NoSuchAlgorithmException {
         Utils.nowEpoch("DOWNLOAD REQ RECEIVED");
-        String filePath = "/fs/" + portNumber + "/" + fileName + ".txt";
+        String filePath = "/home/chiran/Documents/Projects/files/" + portNumber + "/" + fileName + ".txt";
 
         //create random content to fie
         Utils.createRandomContentToFile(filePath);
@@ -44,7 +44,7 @@ public class Controller {
         byte[] bytes = Files.readAllBytes(Paths.get(filePath));
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/octet-stream"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + "/fs/" + portNumber + "/" + fileName + ".txt")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + "/home/chiran/Documents/Projects/files/" + portNumber + "/" + fileName + ".txt")
                 .body(bytes);
     }
 

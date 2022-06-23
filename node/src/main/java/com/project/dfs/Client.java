@@ -35,7 +35,7 @@ public class Client {
             headers.setAccept(Arrays.asList(MediaType.APPLICATION_OCTET_STREAM));
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<byte[]> response = restTemplate.exchange(url, HttpMethod.GET, entity, byte[].class);
-            Files.write(Paths.get("/fs/" + ownerPortNumber + "/" + fileName + ".txt"), response.getBody());
+            Files.write(Paths.get("/home/chiran/Documents/Projects/files/" + ownerPortNumber + "/" + fileName + ".txt"), response.getBody());
             Node.log(Node.INFO, "Requested file downloaded successfully.");
             Utils.nowEpoch("DOWNLOAD SUCCESSFUL");
         } catch (Exception e) {
