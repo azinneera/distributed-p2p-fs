@@ -11,9 +11,16 @@ import java.util.List;
 @SpringBootApplication
 public class App {
     public static int nodePort;
+    public static int bootstrapServerPort;
+
     @Value("${server.port}")
     public void setOwnerPort(int nodePort) {
-        this.nodePort=nodePort;
+        App.nodePort = nodePort;
+    }
+
+    @Value("${bootstrap.server.port}")
+    public void setBootstrapPort(int bootstrapServerPort) {
+        App.bootstrapServerPort = bootstrapServerPort;
     }
 
     @PostConstruct
@@ -25,8 +32,7 @@ public class App {
         SpringApplication.run(App.class, args);
 
         String bootstrapIp = "localhost";
-
-        int bootstrapPort = 55555;
+        int bootstrapPort = bootstrapServerPort;
 
         String bootstrapAddress = System.getProperty("bootstrapAddress");
 
@@ -72,7 +78,7 @@ public class App {
         Node.log(Node.INFO, "Peers : " + peersToConnect);
 
         //3. connect to peers from above
-        node.connectToPeers(peersToConnect, node.nodeIp, node.nodePort);
+        node.connectToPeers(peersToConnect, node.nodeIp, node.portNumber);
 
         //4. start listening
         //startListening(port);

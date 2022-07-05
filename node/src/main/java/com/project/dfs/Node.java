@@ -1,12 +1,13 @@
 package com.project.dfs;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -42,7 +43,7 @@ public class Node {
     private int bootstrapPort;
     private String nodeName;
     public String nodeIp;
-    public int nodePort;
+    public int portNumber;
     private int hopsCount;
     private Long currentTimestamp = (long) 0;
 
@@ -63,7 +64,7 @@ public class Node {
         this.bootstrapPort = bootstrapPort;
         this.nodeName = nodeName;
         this.nodeIp = nodeIp;
-        this.nodePort = nodePort;
+        this.portNumber = nodePort;
         this.hopsCount = hopsCount;
     }
 
@@ -79,8 +80,8 @@ public class Node {
         return this.nodeIp;
     }
 
-    public int getNodePort() {
-        return this.nodePort;
+    public int getPortNumber() {
+        return this.portNumber;
     }
 
     public String getNodeName() {
@@ -128,14 +129,14 @@ public class Node {
         String address = "localhost";
         try {
 
-            Enumeration networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
 
             while (networkInterfaces.hasMoreElements()) {
-                NetworkInterface netface = (NetworkInterface) networkInterfaces.nextElement();
-                Enumeration addresses = netface.getInetAddresses();
+                NetworkInterface netface = networkInterfaces.nextElement();
+                Enumeration<InetAddress> addresses = netface.getInetAddresses();
 
                 while (addresses.hasMoreElements()) {
-                    InetAddress ip = (InetAddress) addresses.nextElement();
+                    InetAddress ip = addresses.nextElement();
                     if (!ip.isLoopbackAddress() && isIP(ip.getHostAddress())) {
                         return ip.getHostAddress();
                     }
@@ -182,26 +183,26 @@ public class Node {
         };
 
         // Create the directory
-        File theDir = new File("/home/chiran/Documents/Projects/files/" + String.valueOf(nodePort));
-        if (!theDir.exists()) {
-            theDir.mkdirs();
+        Path nodeDir = Utils.getNodesDir().resolve(String.valueOf(portNumber));
+        if (Files.exists(nodeDir)) {
+            Utils.deleteDirectory(nodeDir);
         }
+        Files.createDirectory(nodeDir);
+        log(INFO, "Create file storage location for node at " + nodeDir);
 
         Random random = new Random();
-
         String[] subFileList = new String[5];
-        log(INFO, "This node file list : ");
+        log(INFO, "File list added to this node: ");
+
         for (int i = 0; i < 5; i++) {
             int randIndex = random.nextInt(fileList.length - 1);
-
             if (!Arrays.asList(subFileList).contains(fileList[randIndex])) {
                 subFileList[i] = fileList[randIndex];
                 System.out.println("\t\t" + subFileList[i]);
+                Path filePath = nodeDir.resolve(subFileList[i] + ".txt");
+                Files.createFile(filePath);
 
-                File file = new File("/home/chiran/Documents/Projects/files/" + String.valueOf(nodePort) + "/" + subFileList[i] + ".txt");
-                file.createNewFile();
-
-                FileWriter myWriter = new FileWriter("/home/chiran/Documents/Projects/files/" + String.valueOf(nodePort) + "/" + subFileList[i] + ".txt");
+                FileWriter myWriter = new FileWriter(filePath.toString());
                 int randContent = random.nextInt(100000000);
                 myWriter.write(String.valueOf(randContent));
                 myWriter.close();
@@ -238,7 +239,7 @@ public class Node {
                 List<String> fileSearchResultsList = searchInCurrentFileList(resourceName);
 
                 if (fileSearchResultsList.size() > 0) {
-                    log(INFO, "FOUND: Ranking file found in current node '" + nodeIp + ":" + nodePort + "' as '" +
+                    log(INFO, "FOUND: Ranking file found in current node '" + nodeIp + ":" + portNumber + "' as '" +
                             fileSearchResultsList + "'");
                     continue;
                 }
@@ -246,14 +247,14 @@ public class Node {
                 String[] resources = resourceName.split(" ");
                 if (resources.length > 1) {
                     Forum forum = getMatchingForumFromTheList(resources[0], resources[1]);
-                    if (resources[0].equals(nodeIp + ":" + nodePort) && forum != null) {
-                        log(INFO, "FOUND: Ranking forum found in current node '" + nodeIp + ":" + nodePort + "' as '" +
+                    if (resources[0].equals(nodeIp + ":" + portNumber) && forum != null) {
+                        log(INFO, "FOUND: Ranking forum found in current node '" + nodeIp + ":" + portNumber + "' as '" +
                                 fileSearchResultsList + "'");
                         continue;
                     }
                 }
 
-                String rankMessage = prependLengthToMessage("RANK " + nodeIp + ":" + nodePort + " " + messages[1] +
+                String rankMessage = prependLengthToMessage("RANK " + nodeIp + ":" + portNumber + " " + messages[1] +
                         " " + messages[2]);
                 addToReceivedRankMessageMap(rankMessage, System.currentTimeMillis());
                 sendRankingMessageToPeers(rankMessage);
@@ -265,9 +266,9 @@ public class Node {
                 Long currentTime = getCurrentTimestamp();
                 currentTime = setCurrentTimestamp(currentTime);
 
-                Forum forum = addToCurrentForumList(messages[1], currentTime.toString(), nodeIp + ":" + nodePort);
+                Forum forum = addToCurrentForumList(messages[1], currentTime.toString(), nodeIp + ":" + portNumber);
 
-                String forumCreationMessage = "COM " + nodeIp + ":" + nodePort + " " + forum.getCommentTime() +
+                String forumCreationMessage = "COM " + nodeIp + ":" + portNumber + " " + forum.getCommentTime() +
                         " " + forum.getComment();
 
                 addToReceivedForumMessageMap(forumCreationMessage, System.currentTimeMillis());
@@ -283,11 +284,11 @@ public class Node {
                 Long currentTime = getCurrentTimestamp();
                 currentTime = setCurrentTimestamp(currentTime);
 
-                Forum forum = addForumReplyToCurrentForumList(messages[3], nodeIp + ":" + nodePort,
+                Forum forum = addForumReplyToCurrentForumList(messages[3], nodeIp + ":" + portNumber,
                         currentTime.toString(), messages[1], messages[2], true);
 
                 String forumReplyMessage = "COMRPLY " + messages[1] + " " + messages[2] + " " + nodeIp + ":" +
-                        nodePort + " " + currentTime.toString() + " " + messages[3];
+                        portNumber + " " + currentTime.toString() + " " + messages[3];
 
                 if (forum != null) {
                     forumReplyMessage = forumReplyMessage + " " + VERIFIED;
@@ -309,10 +310,10 @@ public class Node {
             List<String> searchedFiles = searchInCurrentFileList(query);
 
             if (!searchedFiles.isEmpty()) {
-                log(INFO, "FOUND: Searched file found in current node '" + nodeIp + ":" + nodePort + "' as '" +
+                log(INFO, "FOUND: Searched file found in current node '" + nodeIp + ":" + portNumber + "' as '" +
                         searchedFiles + "'");
             } else {
-                String searchQuery = constructSearchQuery(nodeIp, nodePort, query, hopsCount);
+                String searchQuery = constructSearchQuery(nodeIp, portNumber, query, hopsCount);
                 addToSentSearchQueryMap(query.toLowerCase(), hopsCount);
                 sendSearchQuery(searchQuery);
                 Utils.setA(0);
@@ -330,7 +331,7 @@ public class Node {
             InetAddress bootstrapHost = InetAddress.getByName(bootstrapIp);
             clientSocket = new DatagramSocket();
             byte[] receiveData = new byte[1024];
-            String message = this.prependLengthToMessage("UNREG " + nodeIp + " " + nodePort + " " + nodeName);
+            String message = this.prependLengthToMessage("UNREG " + nodeIp + " " + portNumber + " " + nodeName);
             byte[] sendData = message.getBytes();
 
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, bootstrapHost, bootstrapPort);
@@ -360,7 +361,7 @@ public class Node {
                 InetAddress address = InetAddress.getByName(peer.getIp());
                 clientSocket = new DatagramSocket();
                 byte[] receiveData = new byte[1024];
-                String message = this.prependLengthToMessage("LEAVE " + nodeIp + " " + nodePort);
+                String message = this.prependLengthToMessage("LEAVE " + nodeIp + " " + portNumber);
                 byte[] sendData = message.getBytes();
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, address, peer.getPort());
                 log(INFO, "SEND: Leave message to '" + peer + "'");
@@ -512,8 +513,6 @@ public class Node {
                 } else {
                     log(ERROR, "Error in connecting to the peer");
                 }
-
-                //TODO: update file list
             }
         } catch (IOException e) {
             log(ERROR, e);
@@ -538,7 +537,7 @@ public class Node {
             System.out.println(bootstrapHost);
             clientSocket = new DatagramSocket();
             byte[] receiveData = new byte[1024];
-            String message = prependLengthToMessage("REG " + nodeIp + " " + nodePort + " " + nodeName);
+            String message = prependLengthToMessage("REG " + nodeIp + " " + portNumber + " " + nodeName);
             byte[] sendData = message.getBytes();
 
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, bootstrapHost, bootstrapPort);
@@ -619,11 +618,11 @@ public class Node {
     }
 
     public void updateCurrentForumList(Forum forumToUpdate) {
-        Boolean isForumUpdated = false;
+        boolean isForumUpdated = false;
         Forum forum = null;
         for (Forum temforum : getForumList()) {
-            if (temforum.getCommentTime() == forumToUpdate.getCommentTime() &&
-                    temforum.getOwnerIp() == forumToUpdate.getOwnerIp()
+            if (temforum.getCommentTime().equals(forumToUpdate.getCommentTime()) &&
+                    temforum.getOwnerIp().equals(forumToUpdate.getOwnerIp())
             ) {
                 forum = temforum;
                 break;
@@ -654,12 +653,14 @@ public class Node {
         log(null, "");
     }
 
-    public Forum addForumReplyToCurrentForumList(String reply, String replyOwnerIp, String replyTime, String forumOwnerIp, String forumTime, Boolean addIfOnlyForumOriginator) {
+    public Forum addForumReplyToCurrentForumList(String reply, String replyOwnerIp, String replyTime,
+                                                 String forumOwnerIp, String forumTime,
+                                                 boolean addIfOnlyForumOriginator) {
 
         Forum forum = null;
         if (addIfOnlyForumOriginator) {
-            if (forumOwnerIp.equals((nodeIp + ":" + nodePort))) {
-                log(INFO, "Reply to forum initiated by same node : " + nodeIp + ":" + nodePort + " => " + forumOwnerIp);
+            if (forumOwnerIp.equals((nodeIp + ":" + portNumber))) {
+                log(INFO, "Reply to forum initiated by same node : " + nodeIp + ":" + portNumber + " => " + forumOwnerIp);
                 forum = getMatchingForumFromTheList(forumOwnerIp, forumTime);
                 ForumReply forumReply = new ForumReply(reply, replyTime, replyOwnerIp);
                 forum.addForumReply(forumReply);
@@ -667,7 +668,7 @@ public class Node {
                 updateCurrentForumList(forum);
             }
         } else {
-            log(INFO, "Initiated by another forum:" + nodeIp + ":" + nodePort + " => " + forumOwnerIp);
+            log(INFO, "Initiated by another forum:" + nodeIp + ":" + portNumber + " => " + forumOwnerIp);
             forum = getMatchingForumFromTheList(forumOwnerIp, forumTime);
             ForumReply forumReply = new ForumReply(reply, replyTime, replyOwnerIp);
             forum.addForumReply(forumReply);
@@ -684,10 +685,6 @@ public class Node {
 
     public void addToSentSearchQueryMap(String query, int hops) {
         sentSearchQueryMap.put(query, hops);
-    }
-
-    public void removeFromSentSearchQueryMap(String query) {
-        sentSearchQueryMap.remove(query);
     }
 
     public void updateSentSearchQueryMap(String query, int hops) {
@@ -786,8 +783,8 @@ class NodeThread extends Thread {
     public void run() {
         DatagramSocket serverSocket;
         try {
-            serverSocket = new DatagramSocket(node.getNodePort());
-            Node.log(INFO, "Started listening on '" + node.getNodePort() + "' for incoming data...");
+            serverSocket = new DatagramSocket(node.getPortNumber());
+            Node.log(INFO, "Started listening on '" + node.getPortNumber() + "' for incoming data...");
 
             while (true) {
                 byte[] buffer = new byte[65536];
@@ -849,7 +846,7 @@ class NodeThread extends Thread {
                         String fileSearchResults = joinSearchResults(fileSearchResultsList);
                         double rank = node.getRankOfFile(searchFilename);
                         responseString = node.prependLengthToMessage("SEROK " + fileSearchResultsList.size() + " " +
-                                node.getNodeIp() + " " + node.getNodePort() + " \"" + fileSearchResults + "\" " +
+                                node.getNodeIp() + " " + node.getPortNumber() + " \"" + fileSearchResults + "\" " +
                                 Integer.parseInt(response[5]) + " " + rank);
 
                         Node.log(INFO, "FOUND: File found locally : " + responseString);
@@ -909,7 +906,7 @@ class NodeThread extends Thread {
                     String[] resources = resourceToRank.split(" ");
                     if (resources.length > 1) {
                         Forum forum = node.getMatchingForumFromTheList(resources[0], resources[1]);
-                        if (resources[0].equals(node.getNodeIp() + ":" + node.getNodePort()) && forum != null) {
+                        if (resources[0].equals(node.getNodeIp() + ":" + node.getPortNumber()) && forum != null) {
                             isForumInCurrentNode = true;
                         }
                     }
@@ -979,7 +976,6 @@ class NodeThread extends Thread {
                         node.removeFromReceivedForumReplyMessageMap(incomingMessage);
                     }
 
-//                    Boolean addIfFromOriginator = null;
                     boolean addIfFromOriginator = !Node.VERIFIED.equals(response[7]);
 
                     Forum forum = node.addForumReplyToCurrentForumList(response[6], response[4], response[5],
