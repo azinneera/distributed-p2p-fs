@@ -8,10 +8,10 @@
 		<version>2.5.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.isuru</groupId>
-	<artifactId>dfs</artifactId>
+	<groupId>com.asmaj</groupId>
+	<artifactId>node</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>dfs</name>
+	<name>node</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
 		<java.version>11</java.version>

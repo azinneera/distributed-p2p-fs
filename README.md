@@ -45,7 +45,9 @@
    ```bash
     java -jar target/dfs-0.0.1-SNAPSHOT.jar --server.port=<node-port> --bootstrap.server.port=<bootstrap-server-port>
    ```
-   When the node starts, it accepts queries to be searched. The following log will be seen when the node is started.
+   When the node starts, 5 files will be copied to its storage location which will be shown on the startup log. Once started,
+   it accepts queries to be searched. The following log will be seen when the node is started.
+   
    ```
    .
    .
@@ -111,9 +113,11 @@
       ```
       INFO : RECEIVE: Search results received from '/192.168.1.15:59920' as '0048 SEROK 1 172.20.0.1 5002 "Super Mario" 5 0.0'
       INFO : Epoch timestamp in millis: 1657044554746 at DOWNLOAD START REQUEST
-      INFO : Requested file downloaded successfully.
-      INFO : Requested file downloaded successfully.
-      INFO : Epoch timestamp in millis: 1657044555115 at DOWNLOAD SUCCESSFUL
+      INFO : Epoch timestamp in millis: 1657305060414 at DOWNLOAD START REQUEST
+      INFO : ---------------------------------------------------------
+      INFO : Downloaded 'Super Mario.txt' successfully.
+      INFO : ---------------------------------------------------------
+      INFO : Epoch timestamp in millis: 1657305060938 at DOWNLOAD SUCCESSFUL
       ```
 2. Check the files saved in the storage location dedicated for this node:
       ```bash

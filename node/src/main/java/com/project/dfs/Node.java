@@ -34,7 +34,7 @@ public class Node {
     public static final String UNVERIFIED = "UNVERIFIED";
 
 
-    public static final int default_hops_count = 5;
+    public static final int default_hops_count = 10;
 
     private List<Peer> routingTable = new ArrayList<>();
     private List<Forum> forumList = new ArrayList<>();
